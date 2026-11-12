@@ -1,0 +1,26 @@
+# Experimental data and analysis results
+data/
+results/
+*.asc
+
+# CMake build directories
+build/
+build_*/
+build*/
+CMakeFiles/
+CMakeCache.txt
+
+# Qt backup directories
+qt_app_backup*/
+
+# Generated test files
+Testing/
+
+# Editor settings
+.vscode/
+
+# Compiled files
+*.o
+*.so
+*.a
+*.log
