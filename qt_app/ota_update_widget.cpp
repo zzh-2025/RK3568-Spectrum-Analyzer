@@ -214,6 +214,9 @@ void OtaUpdateWidget::checkForUpdates()
     if (m_manifestReply || m_packageReply)
         return;
 
+    m_updateAvailable = false;
+    m_downloadButton->setEnabled(false);
+
     const QString baseText = normalizedBaseUrl(m_serverEdit->text());
     const QUrl baseUrl(baseText);
     if ((baseUrl.scheme() != QStringLiteral("http") && baseUrl.scheme() != QStringLiteral("https")) ||
@@ -230,8 +233,6 @@ void OtaUpdateWidget::checkForUpdates()
     manifestUrl.setPath(basePath + QStringLiteral("/manifest.json"));
     m_serverBaseUrl = baseText;
 
-    m_updateAvailable = false;
-    m_downloadButton->setEnabled(false);
     m_packagePathLabel->clear();
     m_serverVersionLabel->setText(QStringLiteral("正在检查…"));
     m_progress->hide();
