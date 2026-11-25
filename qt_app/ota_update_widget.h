@@ -23,6 +23,7 @@ private:
     void handleManifestReply(QNetworkReply *reply);
     void startPackageDownload();
     void finishPackageDownload(QNetworkReply *reply);
+    void applyDownloadedUpdate();
     void setStatus(const QString &message, bool isError = false);
     void setBusy(bool busy);
     bool isServerVersionNewer(const QString &candidate, const QString &current) const;
@@ -38,6 +39,7 @@ private:
     qint64 m_expectedSize = 0;
     qint64 m_receivedBytes = 0;
     bool m_updateAvailable = false;
+    bool m_downloadVerified = false;
 
     QNetworkAccessManager *m_network = nullptr;
     QNetworkReply *m_manifestReply = nullptr;
