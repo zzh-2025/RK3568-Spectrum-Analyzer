@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-ROOT="$(cd "$(dirname "\${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION="$(tr -d '\r\n' < "$ROOT/VERSION")"
 ARCH="$(uname -m)"
-BUILD_JOBS="\${BUILD_JOBS:-2}"
+BUILD_JOBS="${BUILD_JOBS:-2}"
 if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$ ]]; then echo "ERROR: invalid VERSION: $VERSION" >&2; exit 1; fi
 if [[ "$ARCH" != "aarch64" && "$ARCH" != "arm64" ]]; then echo "ERROR: build on RK3568 ARM64 (detected: $ARCH)." >&2; exit 1; fi
 for tool in cmake c++ ldd tar sha256sum python3; do command -v "$tool" >/dev/null 2>&1 || { echo "ERROR: required tool not found: $tool" >&2; exit 1; }; done
 CORE_BUILD="$ROOT/build_ota_release"
 QT_BUILD="$ROOT/qt_app/build_ota_release"
 DIST="$ROOT/dist"
-PACKAGE="rk3568-spectrum-analyzer-\${VERSION}-linux-aarch64.tar.gz"
+PACKAGE="rk3568-spectrum-analyzer-${VERSION}-linux-aarch64.tar.gz"
 mkdir -p "$DIST"
 STAGE="$(mktemp -d "$DIST/.stage.XXXXXX")"
 cleanup() { rm -rf "$STAGE"; }
