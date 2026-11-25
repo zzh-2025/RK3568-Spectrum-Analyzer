@@ -32,9 +32,13 @@ if(NOT SPECTRUM_APP_VERSION)
     set(SPECTRUM_APP_VERSION "0.0.0-dev")
 endif()
 
-target_compile_definitions(spectrum_qt PRIVATE
-    SPECTRUM_APP_VERSION=\\"${SPECTRUM_APP_VERSION}\\"
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/app_version.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/app_version.h"
+    @ONLY
 )
+
+target_include_directories(spectrum_qt PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
 target_link_libraries(spectrum_qt PRIVATE Qt5::Widgets Qt5::Charts)
 target_compile_options(spectrum_qt PRIVATE -Wall -Wextra -Wpedantic)
