@@ -6,11 +6,9 @@
 #include <QRect>
 #include <memory>
 
-#include "mainwindow.h"
+#include "app_version.h"
 
-#ifndef SPECTRUM_APP_VERSION
-#define SPECTRUM_APP_VERSION "dev"
-#endif
+#include "mainwindow.h"
 
 int main(int argc, char *argv[])
 {
