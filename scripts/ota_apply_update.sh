@@ -62,6 +62,16 @@ on_exit() {
         fi
 
         if [[ -n "$OLD_RELEASE" && -x "$OLD_RELEASE/launch.sh" ]]; then
+            # The Qt client exits shortly after starting this detached helper.
+            # Allow that shutdown to finish before deciding whether relaunch is needed.
+            if [[ "$OLD_PID" =~ ^[0-9]+$ ]]; then
+                for ((wait_i = 0; wait_i < 8; ++wait_i)); do
+                    if ! kill -0 "$OLD_PID" 2>/dev/null; then
+                        break
+                    fi
+                    sleep 1
+                done
+            fi
             if [[ -z "$OLD_PID" ]] || ! kill -0 "$OLD_PID" 2>/dev/null; then
                 log "Restarting previous release: $OLD_RELEASE"
                 "$OLD_RELEASE/launch.sh" >> "$LOG_FILE" 2>&1 &
