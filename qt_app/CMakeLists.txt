@@ -12,6 +12,8 @@ add_executable(spectrum_qt
     main.cpp
     mainwindow.cpp
     mainwindow.h
+    app_paths.cpp
+    app_paths.h
     batchmanager.cpp
     batchmanager.h
     spectrumchart.cpp
@@ -23,6 +25,15 @@ add_executable(spectrum_qt
 
 target_include_directories(spectrum_qt PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../include"
+)
+
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/../VERSION" SPECTRUM_APP_VERSION LIMIT_COUNT 1)
+if(NOT SPECTRUM_APP_VERSION)
+    set(SPECTRUM_APP_VERSION "0.0.0-dev")
+endif()
+
+target_compile_definitions(spectrum_qt PRIVATE
+    SPECTRUM_APP_VERSION=\\"${SPECTRUM_APP_VERSION}\\"
 )
 
 target_link_libraries(spectrum_qt PRIVATE Qt5::Widgets Qt5::Charts)
