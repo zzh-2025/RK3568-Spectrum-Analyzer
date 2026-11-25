@@ -108,7 +108,7 @@ OtaUpdateWidget::OtaUpdateWidget(const QString &currentVersion, QWidget *parent)
     page->addWidget(m_packagePathLabel);
 
     auto *hint = new QLabel(
-        QStringLiteral("当前阶段：版本检查、安装包下载及 SHA-256 校验。安装切换和失败回滚将在下一阶段接入。"
+        QStringLiteral("当前阶段：版本检查、下载校验、自动安装、版本切换及启动失败回滚。"
                        "\n提示：当前使用局域网 HTTP，请仅在可信任的本地网络中测试。"),
         this);
     hint->setWordWrap(true);
