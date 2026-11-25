@@ -3,6 +3,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QFont>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QJsonDocument>
@@ -17,6 +18,7 @@
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QStandardPaths>
+#include <QStringList>
 #include <QUrl>
 #include <QVBoxLayout>
 
@@ -152,6 +154,10 @@ bool OtaUpdateWidget::isServerVersionNewer(const QString &candidate, const QStri
 
 bool OtaUpdateWidget::validateManifest(const QByteArray &payload, QString *error)
 {
+    if (payload.size() > 64 * 1024) {
+        *error = QStringLiteral("manifest.json 超过 64 KB 限制。");
+        return false;
+    }
     QJsonParseError parseError;
     const QJsonDocument document = QJsonDocument::fromJson(payload, &parseError);
     if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
@@ -224,6 +230,7 @@ void OtaUpdateWidget::checkForUpdates()
     manifestUrl.setPath(basePath + QStringLiteral("/manifest.json"));
     m_serverBaseUrl = baseText;
 
+    m_updateAvailable = false;
     m_downloadButton->setEnabled(false);
     m_packagePathLabel->clear();
     m_serverVersionLabel->setText(QStringLiteral("正在检查…"));
