@@ -82,11 +82,6 @@ on_exit() {
 
 trap on_exit EXIT
 
-if ! mkdir "$LOCK_DIR" 2>/dev/null; then
-    die "Another OTA operation is running, or stale lock exists: $LOCK_DIR"
-fi
-LOCK_ACQUIRED=1
-
 if [[ ! -L "$CURRENT" ]]; then
     die "No managed current release found. Install the baseline release first."
 fi
@@ -100,6 +95,11 @@ case "$OLD_RELEASE" in
     "$RELEASES"/*) ;;
     *) die "The current release points outside the managed releases directory." ;;
 esac
+
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+    die "Another OTA operation is running, or stale lock exists: $LOCK_DIR"
+fi
+LOCK_ACQUIRED=1
 
 if [[ ! "$EXPECTED_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     die "Invalid target version: $EXPECTED_VERSION"
