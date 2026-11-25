@@ -1,0 +1,3 @@
+#pragma once
+
+#define SPECTRUM_APP_VERSION "@SPECTRUM_APP_VERSION@"
