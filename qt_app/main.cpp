@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QScreen>
 #include <QRect>
+#include <QFile>
+#include <QTimer>
 #include <memory>
 
 #include "app_version.h"
@@ -37,5 +39,20 @@ int main(int argc, char *argv[])
         }
     }
     window->show();  // Do not maximize: preserve our safety margins.
+
+    // The OTA helper watches this marker to confirm that the new GUI process
+    // has constructed its main window and kept the Qt event loop alive.
+    const QString healthMarker = qEnvironmentVariable("SPECTRUM_OTA_HEALTH_FILE");
+    if (!healthMarker.isEmpty()) {
+        QTimer::singleShot(3000, &app, [healthMarker]() {
+            QFile marker(healthMarker);
+            if (marker.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+                marker.write(QCoreApplication::applicationVersion().toUtf8());
+                marker.write("\\n");
+                marker.flush();
+            }
+        });
+    }
+
     return app.exec();
 }
