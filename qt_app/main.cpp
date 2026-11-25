@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
             QFile marker(healthMarker);
             if (marker.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
                 marker.write(QCoreApplication::applicationVersion().toUtf8());
-                marker.write("\\n");
+                marker.write("\n");
                 marker.flush();
             }
         });
