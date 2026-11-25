@@ -24,3 +24,6 @@ Testing/
 *.so
 *.a
 *.log
+
+# Generated ARM64 release packages and manifests
+dist/
