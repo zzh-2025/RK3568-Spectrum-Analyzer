@@ -337,6 +337,11 @@ void OtaUpdateWidget::startPackageDownload()
         if (!m_packageReply || !m_packageFile || !m_hash)
             return;
         const QByteArray chunk = m_packageReply->readAll();
+        if (m_receivedBytes + chunk.size() > m_expectedSize) {
+            m_downloadError = QStringLiteral("下载数据超过 manifest 声明的文件大小，已中止。");
+            m_packageReply->abort();
+            return;
+        }
         if (m_packageFile->write(chunk) != chunk.size()) {
             m_downloadError = QStringLiteral("写入安装包失败：%1").arg(m_packageFile->errorString());
             m_packageReply->abort();
@@ -371,7 +376,9 @@ void OtaUpdateWidget::finishPackageDownload(QNetworkReply *reply)
     reply->deleteLater();
 
     if (m_packageFile && !tail.isEmpty()) {
-        if (m_packageFile->write(tail) != tail.size()) {
+        if (m_receivedBytes + tail.size() > m_expectedSize) {
+            m_downloadError = QStringLiteral("下载数据超过 manifest 声明的文件大小。");
+        } else if (m_packageFile->write(tail) != tail.size()) {
             m_downloadError = QStringLiteral("写入安装包失败：%1").arg(m_packageFile->errorString());
         } else {
             m_hash->addData(tail);
