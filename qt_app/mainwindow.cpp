@@ -4,6 +4,7 @@
 #include "csvutils.h"
 #include "spectrumchart.h"
 #include "coupling_analysis.h"
+#include "ota_update_widget.h"
 
 #include <QApplication>
 #include <QComboBox>
@@ -452,7 +453,11 @@ private:
         couplingPage->setSizes({670, 300});
         m_pages->addTab(couplingPage, QStringLiteral("耦合统计"));
 
-        // Page 4: processing log.
+        // Page 4: LAN OTA version check and verified package download.
+        auto *otaPage = new OtaUpdateWidget(QCoreApplication::applicationVersion(), m_pages);
+        m_pages->addTab(otaPage, QStringLiteral("软件更新"));
+
+        // Page 5: processing log.
         m_log = new QTextEdit(m_pages);
         m_log->setReadOnly(true);
         m_pages->addTab(m_log, QStringLiteral("日志"));
