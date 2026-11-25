@@ -1,5 +1,7 @@
 #include "ota_update_widget.h"
+#include "app_paths.h"
 
+#include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -13,11 +15,14 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QMessageBox>
+#include <QProcess>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QStandardPaths>
+#include <QTimer>
 #include <QStringList>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -112,7 +117,12 @@ OtaUpdateWidget::OtaUpdateWidget(const QString &currentVersion, QWidget *parent)
     page->addStretch(1);
 
     connect(m_checkButton, &QPushButton::clicked, this, [this]() { checkForUpdates(); });
-    connect(m_downloadButton, &QPushButton::clicked, this, [this]() { startPackageDownload(); });
+    connect(m_downloadButton, &QPushButton::clicked, this, [this]() {
+        if (m_downloadVerified)
+            applyDownloadedUpdate();
+        else
+            startPackageDownload();
+    });
 }
 
 void OtaUpdateWidget::setStatus(const QString &message, bool isError)
@@ -215,6 +225,8 @@ void OtaUpdateWidget::checkForUpdates()
         return;
 
     m_updateAvailable = false;
+    m_downloadVerified = false;
+    m_downloadButton->setText(QStringLiteral("下载并校验安装包"));
     m_downloadButton->setEnabled(false);
 
     const QString baseText = normalizedBaseUrl(m_serverEdit->text());
@@ -302,6 +314,8 @@ void OtaUpdateWidget::startPackageDownload()
         return;
     }
 
+    m_downloadVerified = false;
+    m_downloadButton->setText(QStringLiteral("下载并校验安装包"));
     m_downloadPath = QDir(updateDir).filePath(m_packageFileName);
     m_packageFile = new QSaveFile(m_downloadPath, this);
     if (!m_packageFile->open(QIODevice::WriteOnly)) {
@@ -414,15 +428,102 @@ void OtaUpdateWidget::finishPackageDownload(QNetworkReply *reply)
     m_progress->setValue(failure.isEmpty() ? 100 : 0);
     m_checkButton->setEnabled(true);
     m_serverEdit->setEnabled(true);
-    m_downloadButton->setEnabled(m_updateAvailable && !failure.isEmpty());
 
     if (!failure.isEmpty()) {
+        m_downloadVerified = false;
+        m_downloadButton->setText(QStringLiteral("下载并校验安装包"));
+        m_downloadButton->setEnabled(m_updateAvailable);
         QFile::remove(m_downloadPath);
         setStatus(failure, true);
         return;
     }
 
+    m_downloadVerified = true;
     m_packagePathLabel->setText(QStringLiteral("已下载并通过 SHA-256 校验：\n%1").arg(m_downloadPath));
+    m_downloadButton->setText(QStringLiteral("安装更新并重启"));
+    m_downloadButton->setEnabled(true);
+    setStatus(QStringLiteral("安装包下载完成，大小和 SHA-256 均验证通过。点击“安装更新并重启”继续。"));
+}
+
+void OtaUpdateWidget::applyDownloadedUpdate()
+{
+    if (!m_downloadVerified || m_downloadPath.isEmpty() || m_manifestVersion.isEmpty())
+        return;
+
+    const QString installRoot =
+        QDir::home().filePath(QStringLiteral(".local/opt/rk3568-spectrum-analyzer"));
+    const QString currentRoot =
+        QFileInfo(QDir(installRoot).filePath(QStringLiteral("current"))).canonicalFilePath();
+    const QString runningRoot =
+        QFileInfo(AppPaths::applicationRoot()).canonicalFilePath();
+
+    if (currentRoot.isEmpty() || runningRoot.isEmpty() || currentRoot != runningRoot) {
+        QMessageBox::information(
+            this,
+            QStringLiteral("需要先安装正式版本"),
+            QStringLiteral("当前程序不是从正式安装目录启动的。\n\n"
+                           "请先安装当前稳定版本到：\n%1\n\n"
+                           "然后从该目录的 current/launch.sh 启动程序，再执行 OTA 更新。")
+                .arg(installRoot));
+        return;
+    }
+
+    const QString helperPath = QDir(runningRoot).filePath(QStringLiteral("ota_apply_update.sh"));
+    const QFileInfo helperInfo(helperPath);
+    if (!helperInfo.isFile() || !helperInfo.isExecutable()) {
+        QMessageBox::warning(
+            this,
+            QStringLiteral("升级组件缺失"),
+            QStringLiteral("当前安装版本没有 ota_apply_update.sh。请重新打包并安装包含 OTA 安装器的基线版本。"));
+        return;
+    }
+
+    if (!QFileInfo(m_downloadPath).isFile()) {
+        m_downloadVerified = false;
+        m_downloadButton->setText(QStringLiteral("下载并校验安装包"));
+        m_downloadButton->setEnabled(true);
+        setStatus(QStringLiteral("已下载的安装包不存在，请重新下载。"), true);
+        return;
+    }
+
+    const auto answer = QMessageBox::question(
+        this,
+        QStringLiteral("确认安装更新"),
+        QStringLiteral("即将安装版本 v%1。\n\n"
+                       "程序将自动关闭，切换版本并启动新程序。\n"
+                       "如果新版本未能通过启动健康检查，将自动恢复旧版本。\n\n"
+                       "实验数据和分析结果保存在版本目录之外，不会被本次升级覆盖。\n\n"
+                       "现在继续吗？")
+            .arg(m_manifestVersion),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);
+
+    if (answer != QMessageBox::Yes)
+        return;
+
+    const QString helperProgram = QStringLiteral("/bin/bash");
+    const QStringList arguments = {
+        helperPath,
+        m_downloadPath,
+        m_manifestVersion,
+        m_expectedSha256,
+        QString::number(m_expectedSize),
+        QString::number(QCoreApplication::applicationPid())
+    };
+
+    if (!QProcess::startDetached(helperProgram, arguments, runningRoot)) {
+        QMessageBox::warning(
+            this,
+            QStringLiteral("无法启动升级程序"),
+            QStringLiteral("OTA 安装器启动失败，请检查安装目录权限和日志。"));
+        return;
+    }
+
+    m_checkButton->setEnabled(false);
     m_downloadButton->setEnabled(false);
-    setStatus(QStringLiteral("安装包下载完成，大小和 SHA-256 均验证通过。当前版本尚未安装或切换。"));
+    m_serverEdit->setEnabled(false);
+    setStatus(QStringLiteral("升级程序已启动。当前窗口即将关闭；请等待新版本启动。"));
+    QTimer::singleShot(500, this, []() {
+        QCoreApplication::quit();
+    });
 }
