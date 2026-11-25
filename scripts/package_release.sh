@@ -37,6 +37,7 @@ install -m 644 "$ROOT/VERSION" "$PACKAGE_ROOT/VERSION"
 install -m 644 "$ROOT/README.md" "$PACKAGE_ROOT/README.md"
 install -m 755 "$ROOT/scripts/install_release.sh" "$PACKAGE_ROOT/install.sh"
 install -m 755 "$ROOT/scripts/launch_release.sh" "$PACKAGE_ROOT/launch.sh"
+install -m 755 "$ROOT/scripts/ota_apply_update.sh" "$PACKAGE_ROOT/ota_apply_update.sh"
 
 : > "$PACKAGE_ROOT/DEPENDENCIES.txt"
 for name in spectrum_qt spectrum_batch coupling_batch; do
