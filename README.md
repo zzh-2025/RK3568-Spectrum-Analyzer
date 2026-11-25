@@ -22,7 +22,7 @@
 - 已使用系统：Ubuntu 20.04.6 LTS
 - 开发语言：C++17
 - 构建：CMake 3.16+，GCC/G++
-- 界面：Qt5 Widgets、Qt5 Charts（Qt 5.12+）
+- 界面：Qt5 Widgets、Qt5 Charts、Qt5 Network（Qt 5.12+）
 
 已在上述开发板上检查主要可执行程序的动态链接依赖；**本独立仓库的完整重新构建及数据路径部署验证仍需执行**。
 
@@ -89,7 +89,7 @@ mkdir -p data results
 ./qt_app/build_stage8/spectrum_qt
 ```
 
-在开发源码树中，Qt 默认使用仓库内的 `data/`、`results/`，并从 `build_release/` 或 `build/` 查找批量分析程序。安装版计划将三个可执行程序放在同一版本目录的 `bin/` 中，并把用户数据与结果保存在独立的用户数据目录。可通过环境变量 `SPECTRUM_DATA_DIR` 和 `SPECTRUM_RESULTS_DIR` 覆盖默认数据路径。请先构建核心命令行程序，再运行 Qt。
+在开发源码树中，Qt 默认使用仓库内的 `data/`、`results/`，并从 `build_release/` 或 `build/` 查找批量分析程序。安装版将三个可执行程序放在同一版本目录的 `bin/` 中，并把用户数据与结果保存在独立的 Qt 用户数据目录。可通过环境变量 `SPECTRUM_DATA_DIR` 和 `SPECTRUM_RESULTS_DIR` 覆盖默认数据路径。请先构建核心命令行程序，再运行 Qt。
 
 `spectrum_reader` 是单文件测试入口，当前实现还会向工作目录下的 `cpp_version/` 写入 CSV；单独使用该程序前请创建此目录。
 
