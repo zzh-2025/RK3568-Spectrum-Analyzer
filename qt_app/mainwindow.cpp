@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "app_paths.h"
 #include "batchmanager.h"
 #include "csvutils.h"
 #include "spectrumchart.h"
@@ -57,21 +58,6 @@
 
 namespace {
 
-QString locateRoot()
-{
-    // Works both for qt_app/build/spectrum_qt and out-of-source layouts.
-    const QStringList starts = {QCoreApplication::applicationDirPath(), QDir::currentPath()};
-    for (const QString &start : starts) {
-        QDir dir(start);
-        for (int level = 0; level < 8; ++level) {
-            if (QFileInfo(dir.filePath(QStringLiteral("include/lorentz.h"))).isFile() &&
-                QFileInfo(dir.filePath(QStringLiteral("src/lorentz.cpp"))).isFile())
-                return dir.absolutePath();
-            if (!dir.cdUp()) break;
-        }
-    }
-    return QDir::currentPath();
-}
 
 QDoubleSpinBox *makeWavelength(double value, QWidget *parent, double min = 1.0, double max = 2000.0)
 {
@@ -103,10 +89,16 @@ class MainWindow final : public QMainWindow
 public:
     MainWindow()
     {
-        m_projectRoot = locateRoot();
-        m_resultsRoot = QDir(m_projectRoot).filePath(QStringLiteral("results"));
-        m_dataDir = QDir(m_projectRoot).filePath(QStringLiteral("data"));
-        setWindowTitle(QStringLiteral("RK3568 光谱分析平台 | 单峰 / 多峰 / 耦合分析"));
+        m_projectRoot = AppPaths::applicationRoot();
+        m_resultsRoot = AppPaths::resultsDirectory(m_projectRoot);
+        m_dataDir = AppPaths::dataDirectory(m_projectRoot);
+        QDir().mkpath(m_dataDir);
+        QDir().mkpath(m_resultsRoot);
+
+        QString windowTitle = QStringLiteral("RK3568 光谱分析平台 | 单峰 / 多峰 / 耦合分析");
+        if (!QCoreApplication::applicationVersion().isEmpty())
+            windowTitle += QStringLiteral(" | v") + QCoreApplication::applicationVersion();
+        setWindowTitle(windowTitle);
         resize(960, 500);  // Main.cpp fits the actual desktop work area, with margins for Xfce panels.
         buildUi();
         refreshBatchList();
@@ -150,12 +142,7 @@ private:
 
     QString executablePath(const QString &name) const
     {
-        const QDir root(m_projectRoot);
-        for (const QString &folder : {QStringLiteral("build_release"), QStringLiteral("build")}) {
-            const QString path = root.filePath(folder + QLatin1Char('/') + name);
-            if (QFileInfo(path).isExecutable()) return path;
-        }
-        return root.filePath(QStringLiteral("build_release/") + name);
+        return AppPaths::batchExecutable(m_projectRoot, name);
     }
 
     QWidget *makeTargetPanel()
@@ -573,7 +560,7 @@ private:
                                                        : QStringLiteral("spectrum_batch"));
         if (!QFileInfo(program).isExecutable()) {
             QMessageBox::critical(this,QStringLiteral("缺少批量分析程序"),
-                QStringLiteral("找不到可执行文件：\n%1\n\n请先在 cpp-version 下构建对应目标。")
+                QStringLiteral("找不到可执行文件：\n%1\n\n请检查当前安装包或重新构建对应的命令行程序。")
                 .arg(program));
             return;
         }
