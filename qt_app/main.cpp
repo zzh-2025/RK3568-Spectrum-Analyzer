@@ -1,4 +1,6 @@
 #include <QApplication>
+#include <QCoreApplication>
+#include <QString>
 #include <QMainWindow>
 #include <QScreen>
 #include <QRect>
@@ -6,8 +8,16 @@
 
 #include "mainwindow.h"
 
+#ifndef SPECTRUM_APP_VERSION
+#define SPECTRUM_APP_VERSION "dev"
+#endif
+
 int main(int argc, char *argv[])
 {
+    QCoreApplication::setOrganizationName(QStringLiteral("ZZH-2025"));
+    QCoreApplication::setApplicationName(QStringLiteral("RK3568-Spectrum-Analyzer"));
+    QCoreApplication::setApplicationVersion(QStringLiteral(SPECTRUM_APP_VERSION));
+
     QApplication app(argc, argv);
     std::unique_ptr<QMainWindow> window(createMainWindow());
 
